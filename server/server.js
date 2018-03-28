@@ -4,6 +4,8 @@ const http = require('http');
 const crypto = require("crypto-js");
 
 const server = http.createServer(function(request, response) {
+    const cookies = request.headers['cookie'];
+
     if (request.method === 'GET') {
         _httpGet(request, response);
     }
@@ -18,11 +20,18 @@ function _httpGet(request, response) {
 
     if (token === '') {
         const userId = _getUserId(request);
-        token = _generateToken(userId);
+
+        if (userId !== '') {
+            token = _generateToken(userId);
+        }
+    }
+    else {
+        token = _validateToken(token);
     }
 
     response.setHeader('Access-Control-Allow-Origin', request.headers.origin);    
     response.setHeader('Access-Control-Expose-Headers', 'X-Token');
+    response.setHeader('Access-Control-Allow-Credentials', 'true');
     response.setHeader('X-Token', token);
     response.writeHead(200);
     response.end('OK');    
@@ -67,11 +76,16 @@ function _generateToken(userId) {
 
     const headerString = JSON.stringify(header);
     const payloadString = JSON.stringify(payload);
-    const headerBase64 = Buffer.from(headerString).toString('base64');
-    const payloadBase64 = Buffer.from(payloadString).toString('base64');
-    const signature = crypto.HmacSHA1(headerBase64 + '.' + payloadBase64, TOKEN_SECRET);
+    const headerBase64 = Buffer.from(headerString).toString('base64').replace(/=/g, '');
+    const payloadBase64 = Buffer.from(payloadString).toString('base64').replace(/=/g, '');
+    const signature = crypto.HmacSHA256(headerBase64 + '.' + payloadBase64, TOKEN_SECRET);
 
     return headerBase64 + '.' + payloadBase64 + '.' + signature;
+}
+
+function _validateToken(token) {
+    // TODO: validate token
+    return token;
 }
 
 function _getUserId(request) {
@@ -101,5 +115,10 @@ function _getUserId(request) {
 }
 
 function _getUserIdFromDB(username, password) {
-    return 'usr100458';
+    if (username === 'Jesus' && password === '12345') {
+        return 'usr100458';
+    }
+    else {
+        return '';
+    }
 }
