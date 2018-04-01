@@ -2,15 +2,11 @@ const TOKEN_SECRET = 'adlskjfdsoiweuorwelkjklsdfsd';
 
 const http = require('http');
 const crypto = require("crypto-js");
+const repository = require("./repository.js");
 
 const server = http.createServer(function(request, response) {
-    const cookies = request.headers['cookie'];
-
     if (request.method === 'GET') {
         _httpGet(request, response);
-    }
-    else if (request.method === 'POST') {
-        _httpPost(request, response);
     }
 }).listen(8080);
 
@@ -35,18 +31,6 @@ function _httpGet(request, response) {
     response.setHeader('X-Token', token);
     response.writeHead(200);
     response.end('OK');    
-}
-
-function _httpPost(request, response) {        
-    let body = '';
-    request.on('data', function (data) {
-        body += data;
-    });
-    request.on('end', function () {
-        // process request body
-    });
-    response.writeHead(200);
-    response.end('OK');
 }
 
 function _getToken(request) {
@@ -93,8 +77,9 @@ function _getUserId(request) {
     let password = '';
     let userId = '';
 
-    const paramsString = request.url.split('?')[1];
-    const params = paramsString.split('&');
+    const params = request.url
+        .split('?')[1]
+        .split('&');
 
     params.forEach((param) => {
         let paramItems = param.split('=');
@@ -108,17 +93,8 @@ function _getUserId(request) {
     });
 
     if (username !== '' && password !== '') {
-        userId = _getUserIdFromDB(username, password);
+        userId = repository.getUserIdFromDB(username, password);
     }
 
     return userId;
-}
-
-function _getUserIdFromDB(username, password) {
-    if (username === 'Jesus' && password === '12345') {
-        return 'usr100458';
-    }
-    else {
-        return '';
-    }
 }
