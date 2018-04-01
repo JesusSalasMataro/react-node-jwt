@@ -49,21 +49,20 @@ function _getToken(request) {
 }
 
 function _generateToken(userId) {
-    const header =  {
+    const header = JSON.stringify(
+    {
         "alg": "HS256",
         "typ": "JWT"
-    };
+    });
 
-    const payload = {
+    const payload = JSON.stringify(
+    {
         "sub": userId
-    };
+    });
 
-    const headerString = JSON.stringify(header);
-    const payloadString = JSON.stringify(payload);
     const headerBase64 = Buffer.from(headerString).toString('base64').replace(/=/g, '');
     const payloadBase64 = Buffer.from(payloadString).toString('base64').replace(/=/g, '');
     const signature = crypto.HmacSHA256(headerBase64 + '.' + payloadBase64, TOKEN_SECRET);
-
     return headerBase64 + '.' + payloadBase64 + '.' + signature;
 }
 
