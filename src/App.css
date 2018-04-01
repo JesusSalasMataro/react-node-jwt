@@ -2,3 +2,10 @@
     margin: 20px;
 }
 
+#txtToken {
+    width: 100%;
+}
+
+#txtMessage {
+    margin-bottom: 20px;
+}

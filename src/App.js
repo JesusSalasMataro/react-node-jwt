@@ -10,33 +10,19 @@ class App extends Component {
         urlApi: 'http://localhost:8080/',
         token: '',
         username: '',
-        password: ''
+        password: '',
+        message: ''
     }
 
-    createJwt = () => {
-        const { urlApi, username, password } = this.state
-        const url = urlApi + '?username=' + username + '&password=' + password
-        fetch(url, { credentials: 'include' })
-            .then(response => {
-                this.setState(
-                    {
-                        token: response.headers.get('X-Token')
-                    }
-                )
-
-                if (this.state.token === '') {
-                    this.deleteCookie()
-                }
-                else {
-                    this.saveCookie(this.state.token)
-                }
-            })
+    componentWillMount = () => {
+        this.deleteCookie();
     }
 
     deleteJwt = () => {
         this.deleteCookie()
         this.setState({
-            token: ''
+            token: '',
+            message: 'Token deleted'
         })
     }
 
@@ -52,6 +38,14 @@ class App extends Component {
         })
     }
 
+    updateToken = (event) => {
+        this.setState({
+            token: event.target.value
+        })
+
+        this.saveCookie(event.target.value)
+    }
+
     saveCookie = (token) => {
         cookies.set('jwt', token)
     }
@@ -60,33 +54,98 @@ class App extends Component {
         cookies.remove('jwt')
     }
 
+    apiCall = () => {
+        const { urlApi, username, password } = this.state
+        const url = urlApi + '?username=' + username + '&password=' + password
+        let message = ''
+        let tokenFromResponse = ''
+
+        fetch(url, { credentials: 'include' })
+            .then(response => {
+                tokenFromResponse = response.headers.get('X-Token')
+                
+                if (tokenFromResponse === '') {
+                    if (this.state.token === '') {
+                        message = 'Token not created, check credentials'
+                    }
+                    else {
+                        message = 'Token changed, not valid token'
+                    }
+                }
+                else {
+                    message = 'Token created'
+                }
+
+                this.setState(
+                    {
+                        token: tokenFromResponse,
+                        message: message
+                    }
+                )
+
+                if (tokenFromResponse === '') {
+                    this.deleteCookie()
+                }
+                else {
+                    this.saveCookie(tokenFromResponse)
+                }
+            })
+            .catch((error) => {
+                this.setState({
+                    token: '',
+                    message: 'Server error, check if server is on'
+                })
+            })
+    }
+
     render() {
+        const disabledBtnCreateJwt = 
+            this.state.token === '' 
+                ? false 
+                : true
+        
+        const disabledBtnReloadJwt = 
+            this.state.token === '' 
+                ? true 
+                : false
+
         return (
             <div className="App">
                 <h3>JWT example</h3>
                 <br />
                 <p>
-                    Valid credentials > user:Jesus pwd:12345
+                    <b>Valid credentials</b>
+                    <ul>
+                        <li>Username: Jesus</li>                    
+                        <li>Password: 12345</li>
+                    </ul>
                 </p>
                 <br />
                 <input type="text" placeholder="Username..." name="username" onBlur={this.updateUsername} />
                 <input type="text" placeholder="Password..." name="password" onBlur={this.updatePassword} />
                 <br />
                 <br />
-                <input type="button" name="createJwt" value="Create JWT" onClick={this.createJwt} />
-                <input type="button" name="reloadJwt" value="Reload JWT" />
+                <input type="button" name="createJwt" value="Create JWT" onClick={this.apiCall} disabled={disabledBtnCreateJwt} />
+                <input type="button" name="reloadJwt" value="Reload JWT" onClick={this.apiCall} disabled={disabledBtnReloadJwt} />
                 <input type="button" name="deleteJwt" value="Delete JWT" onClick={this.deleteJwt} />
                 <br />
                 <br />
                 <div>
                     <span>
                     {
+                        this.state.message === ''
+                            ?   ''
+                            :   <div id="txtMessage">
+                                    <span>{this.state.message}</span>                                    
+                                </div>
+                    }
+                    {
                         this.state.token === '' 
                             ?   'No token'
                             :   <div>
                                     <span>Token:</span>
                                     <br/>
-                                    <span>{this.state.token}</span>
+                                    <input type="text" id="txtToken" value={this.state.token} onChange={this.updateToken} />
                                 </div>
                     }
                     </span>
