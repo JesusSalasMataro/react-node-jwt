@@ -60,15 +60,26 @@ function _generateToken(userId) {
         "sub": userId
     });
 
-    const headerBase64 = Buffer.from(headerString).toString('base64').replace(/=/g, '');
-    const payloadBase64 = Buffer.from(payloadString).toString('base64').replace(/=/g, '');
+    const headerBase64 = Buffer.from(header).toString('base64').replace(/=/g, '');
+    const payloadBase64 = Buffer.from(payload).toString('base64').replace(/=/g, '');
     const signature = crypto.HmacSHA256(headerBase64 + '.' + payloadBase64, TOKEN_SECRET);
     return headerBase64 + '.' + payloadBase64 + '.' + signature;
 }
 
 function _validateToken(token) {
-    // TODO: validate token
-    return token;
+    const itemsToken = token.split('.');
+    const header = itemsToken[0];
+    const payload = itemsToken[1];
+    const signature = itemsToken[2];
+
+    const expectedSignature = crypto.HmacSHA256(header + '.' + payload, TOKEN_SECRET).toString();
+
+    if (signature === expectedSignature) {
+        return token;
+    }
+    else {
+        return '';
+    }
 }
 
 function _getUserId(request) {
